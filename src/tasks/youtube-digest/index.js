@@ -6,7 +6,7 @@ import { sendTelegram } from '../../notify.js'
 import { PICKS_SCHEMA, buildPrompt, formatDigest, pruneHistory, selectCandidates } from './digest.js'
 import { recentUploads } from './youtube.js'
 
-export async function run ({ config, configDir, dataDir, now }) {
+export async function run ({ config, configDir, dataDir, now, dryRun }) {
   const { windowHours, historyDays, model = 'sonnet' } = config
   const historyPath = join(dataDir, 'history.json')
   const history = pruneHistory(await readJson(historyPath, []), historyDays, now)
@@ -29,11 +29,17 @@ export async function run ({ config, configDir, dataDir, now }) {
       .map(pick => ({ ...byId.get(pick.id), reason: pick.reason }))
   }
 
-  await sendTelegram(formatDigest({ picks, candidates, windowHours }))
+  const summary = `${picks.length} picks from ${candidates.length} candidates across ${channels} channels`
+  const digest = formatDigest({ picks, candidates, windowHours })
+  if (dryRun) {
+    console.log(digest)
+    return summary
+  }
+  await sendTelegram(digest)
   const pickedAt = now.toISOString()
   await writeJson(historyPath, [
     ...history,
     ...picks.map(({ id, channelId, channel, title, reason }) => ({ pickedAt, id, channelId, channel, title, reason }))
   ])
-  return `${picks.length} picks from ${candidates.length} candidates across ${channels} channels`
+  return summary
 }

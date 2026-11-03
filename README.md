@@ -38,6 +38,7 @@ The container reads `/config` (read-only) and writes `/data`.
 {
   "youtube-digest": {
     "dailyAt": "16:30",
+    "days": ["mon", "tue", "wed", "thu", "fri"],
     "windowHours": 8,
     "historyDays": 7,
     "model": "sonnet"
@@ -45,9 +46,11 @@ The container reads `/config` (read-only) and writes `/data`.
 }
 ```
 
-`dailyAt` is local time, set by `TZ`. `model` is optional and defaults to `sonnet`. A task whose
-last successful run is older than its latest scheduled time runs as soon as the container starts,
-so downtime at run time doesn't skip a day. A failed run is retried twice, 10 minutes apart.
+`dailyAt` is local time, set by `TZ`. `days` is optional (`sun` to `sat`) and defaults to every
+day. `model` is optional and defaults to `sonnet`. A task whose last successful run is older than
+its latest scheduled time runs as soon as the container starts on a scheduled day, so downtime at
+run time doesn't skip a day, and never adds a run on a day off. A failed run is retried twice,
+10 minutes apart.
 
 Environment:
 
@@ -60,6 +63,16 @@ Environment:
 
 Run it read-only as the image's `node` user, with tmpfs on `/tmp` and `/home/node` for Claude
 Code's own files.
+
+## Running a task by hand
+
+```bash
+docker exec ai-tasks-automation node src/run-once.js youtube-digest --dry-run
+```
+
+Runs the task now with the current config. `--dry-run` prints what it would send and touches
+nothing: no Telegram message, no history, no last-run time, no Kuma push. Without it, it is a real
+run, recorded like a scheduled one. Tuning criteria is then: edit, deploy, dry run, repeat.
 
 ## YouTube authorisation
 
@@ -75,6 +88,17 @@ YOUTUBE_CLIENT_ID=... YOUTUBE_CLIENT_SECRET=... npm run youtube-auth
 It prints a URL to approve and then the refresh token. The app is unverified, so Google shows a
 warning screen before the approval.
 
+## Privacy
+
+This is self-hosted software with no service behind it: each deployment runs on its owner's own
+machine with its own Google OAuth client, and only its owner authorises it. With the
+`youtube.readonly` scope it reads the authorising account's subscriptions and the public details of
+their recent uploads. It cannot change anything on the account. That data goes only to the
+deployment itself, to the Claude model the owner configures, and as the chosen videos to the
+owner's own Telegram chat. The only thing stored is a short list of recent picks on the owner's
+machine, pruned after a few days. Nothing is collected by, or shared with, the author of this
+software. To revoke access: Google Account → Security → Third-party connections.
+
 ## Development
 
 ```bash
@@ -86,5 +110,7 @@ No runtime dependencies besides Claude Code, which the Dockerfile pins with
 `CLAUDE_CODE_VERSION`. To release, bump `version` in `package.json`, then tag `v<version>` and push
 the tag.
 
-A new task is a folder under `src/tasks/<id>/` exporting `run({ config, configDir, dataDir, now })`,
-which returns a one-line summary, plus an entry in the `TASKS` map in `src/main.js`.
+A new task is a folder under `src/tasks/<id>/` exporting
+`run({ config, configDir, dataDir, now, dryRun })`, which returns a one-line summary and, on a dry
+run, prints instead of delivering or saving anything, plus an entry in the `TASKS` map in
+`src/tasks.js`.

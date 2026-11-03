@@ -65,12 +65,12 @@ Answer with the ids of your picks, best first, each with one short sentence on w
 
 export function formatDigest ({ picks, candidates, windowHours }) {
   if (!picks.length) {
-    return `<b>YouTube digest</b>\nNothing worth it in ${candidates.length} new videos from the last ${windowHours} h.`
+    return `<b>Resumen de YouTube</b>\nNada que valga la pena en ${candidates.length} vídeos nuevos de las últimas ${windowHours} h.`
   }
   const lines = picks.map((pick, index) => {
     const length = pick.seconds === null ? '' : ` · ${minutes(pick.seconds)} min`
     return `${index + 1}. <a href="https://youtu.be/${pick.id}">${escapeHtml(pick.title)}</a>\n` +
       `${escapeHtml(pick.channel)}${length}\n<i>${escapeHtml(pick.reason)}</i>`
   })
-  return `<b>YouTube digest</b> · ${picks.length} of ${candidates.length} new videos\n\n${lines.join('\n\n')}`
+  return `<b>Resumen de YouTube</b> · ${picks.length} de ${candidates.length} vídeos nuevos\n\n${lines.join('\n\n')}`
 }
