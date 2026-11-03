@@ -1,0 +1,16 @@
+{
+  "name": "ai-tasks-automation",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Scheduled tasks whose judgement step is Claude Code in print mode",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node src/main.js",
+    "test": "node --test",
+    "youtube-auth": "node scripts/youtube-auth.js"
+  },
+  "license": "MIT"
+}
